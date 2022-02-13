@@ -34,16 +34,22 @@ def train(args):
     with open(args.rules, 'w') as fr:
         for rule in rules:
             left_part = rule.split(" -> ")[0]
-            prob = math.log(quantity_rules[rule] / left_quantity[left_part])
-            # prob = quantity_rules[rule] / left_quantity[left_part]
+            assert quantity_rules[rule] > 0
+
+            #prob = math.log(quantity_rules[rule] / left_quantity[left_part])
+            prob = quantity_rules[rule] / left_quantity[left_part]
 
             fr.write(rule + "\t" + str(prob) + "\n")
 
     with open(args.lexicon, 'w') as fl:
         for lexicon_entry in lexicon:
+            print(lexicon_entry)
             left_part = lexicon_entry.split(" -> ")[0]
-            prob = math.log(quantity_rules[lexicon_entry] / left_quantity[left_part])
-            # prob = quantity_rules[lexicon_entry] / left_quantity[left_part]
+
+            assert quantity_rules[lexicon_entry] > 0
+
+            #prob = math.log(quantity_rules[lexicon_entry] / left_quantity[left_part])
+            prob = quantity_rules[lexicon_entry] / left_quantity[left_part]
 
             fl.write(lexicon_entry + "\t" + str(prob) + "\n")
 
@@ -96,6 +102,8 @@ def binarization():
 
         if not (future.done()):
             futures.append(future)
+            print("con")
+            continue
 
         new_rules, rule = future.result()
 
@@ -137,7 +145,7 @@ def truncate(left_part, rules, rule):
         left = rule_fragment[1]
         right = rule_fragment[2]
 
-        if len(right) == 0 and len(left) >= 2:
+        if len(right) == 0 and len(left) > 2:
             new_terminal = get_terminal_name(left[0], left[1])
 
             agenda.append((rule_fragment[0], new_terminal, left[-1]))
@@ -145,7 +153,7 @@ def truncate(left_part, rules, rule):
         else:
             if isinstance(left, list):
                 if len(left) > 0:
-                    rule_fragment = (rule_fragment[0], left[0], rule_fragment[2])
+                    rule_fragment = (rule_fragment[0], " ".join(left), rule_fragment[2])
                 else:
                     rule_fragment = (rule_fragment[0], "", rule_fragment[2])
 
@@ -160,12 +168,13 @@ def truncate(left_part, rules, rule):
             else:
                 new_rules.append(rule_fragment[0] + " -> " + rule_fragment[1] + " " + rule_fragment[2])
 
-            # print(rule_fragment[0] + " -> " + rule_fragment[1] + " " + rule_fragment[2])
+            #print(rule_fragment[0] + " -> " + rule_fragment[1] + " " + rule_fragment[2])
 
     return new_rules, rule
 
 
 def compute_ovv():
+    global lexicon
     for lexicon_entry in set(lexicon):
         split = lexicon_entry.split(" -> ")
 
@@ -188,7 +197,7 @@ if __name__ == '__main__':
     ap.add_argument('--lexicon', type=str, default='lexicon.txt')
     ap.add_argument('trees', type=str)
 
-    # truncate("S", ["A", "B", "C"])
+    #truncate("S", ["A", "B", "C", "D", "E", "F", "G", "W"], "S - A B C")
     train(ap.parse_args())
 
 '''

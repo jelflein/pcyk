@@ -24,21 +24,9 @@ def load_lexicon(filename):
 
             prob = split[1]
 
-            lexicon[left_part].append((prob, right_part))
+            lexicon[right_part].append((prob, left_part))
 
     return lexicon
-
-    ''''''
-    return {
-        'the': [(-0.22, 'DET')],  # Beachte: Log-Wahscheinlichkeiten!
-        'a': [(-0.40, 'DET')],
-        'professor': [(-0.26, 'N')],
-        'student': [(-0.60, 'N')],
-        'telescope': [(-0.82, 'N')],
-        'saw': [(-0.02, 'V')],
-        'with': [(0.0, 'P')],
-        'OOV': [(-1.3, 'N'), (-1.3, 'V')]
-    }
 
 
 def load_rules(filename):
@@ -60,16 +48,6 @@ def load_rules(filename):
             rules.append((prob, tuple(line_rule)))
 
     return rules
-
-    # Platzhalter; hier sollen die (nich-lexikalschen) Regeln eingelesen werden.
-    return [
-        (0.0, ('S', 'NP', 'VP')),  # Log-Wahrscheinlichkeiten
-        (-0.15, ('NP', 'DET', 'N')),
-        (-0.52, ('NP', 'NP', 'PP')),
-        (-0.10, ('VP', 'V', 'NP')),
-        (-0.70, ('VP', 'VP', 'PP')),
-        (0, ('PP', 'P', 'NP'))
-    ]
 
 
 class PCYK():
@@ -120,7 +98,7 @@ def main(args):
 
 if __name__ == "__main__":
     ap = ArgumentParser()
-    ap.add_argument('--rules', type=str, default='old_rules.txt')
+    ap.add_argument('--rules', type=str, default='rules.txt')
     ap.add_argument('--lexicon', type=str, default='lexicon.txt')
     ap.add_argument('--beam', type=int, default=50)
     ap.add_argument('--maxlen', type=int, default=10)
