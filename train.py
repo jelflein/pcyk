@@ -80,7 +80,7 @@ def compute_rule(tree: Tree):
 
 def binarization():
     futures = []
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         for rule in set(rules):
             left, right = rule.split(" -> ")
             right_terminals = right.split()
