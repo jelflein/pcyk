@@ -14,7 +14,7 @@ def load_lexicon(filename):
 
     with open(filename, 'r') as fl:
         for line in fl:
-            #[word, word\tprob]
+            # [word, word\tprob]
             split = line.strip().split(" -> ")
 
             left_part = split[0]
@@ -24,28 +24,26 @@ def load_lexicon(filename):
 
             prob = split[1]
 
-            lexicon[right_part].append((prob, left_part))
+            lexicon[right_part].append((float(prob), left_part))
 
     return lexicon
 
 
 def load_rules(filename):
-    rules = []
-
+    rules = defaultdict(lambda: defaultdict(list))
     with open(filename, 'r') as fl:
         for line in fl:
-            #[word, word\tprob]
+            # [word, word\tprob]
             split = line.strip().split(" -> ")
 
-            line_rule = [split[0]]
+            left_terminal = [split[0]][0]
 
             split = split[1].split("\t")
 
-            line_rule.extend(split[0].split())
-
+            right_terminals = split[0].split()
             prob = split[len(split) - 1]
 
-            rules.append((prob, tuple(line_rule)))
+            rules[right_terminals[0]][right_terminals[1]].append((float(prob), left_terminal))
 
     return rules
 
@@ -65,18 +63,24 @@ class PCYK():
             for prob, lhs in self.lexicon.get(wi, []) or self.lexicon['OOV']:  # nimm "OOV" falls wi nicht im Lexikon
                 P[i - 1, i][lhs] = prob
                 B[i - 1, i][lhs] = Tree(lhs, [Tree(wi, [])])
+
             for j in range(i - 2, -1, -1):
                 for k in range(j + 1, i):
-                    for ruleprob, (lhs, rhs1, rhs2) in self.rules:
-                        if rhs1 in P[j, k] and rhs2 in P[k, i]:
-                            # Regel gefunden
-                            prob = ruleprob + P[j, k][rhs1] + P[k, i][rhs2]
-                            if lhs not in P[j, i] or prob > P[j, i][lhs]:
-                                # update Wahrscheinlichkeit
-                                P[j, i][lhs] = prob
-                                # update Pointer / Baum
-                                B[j, i][lhs] = Tree(lhs, [B[j, k][rhs1], B[k, i][rhs2]])
+                    for rhs1 in P[j, k]:
+                        for rhs2 in P[k, i]:
+                            for ruleprob, lhs in self.rules[rhs1][rhs2]:
+                                prob = ruleprob + P[j, k][rhs1] + P[k, i][rhs2]
+                                if lhs not in P[j, i] or prob > P[j, i][lhs]:
+                                    # update Wahrscheinlichkeit
+                                    P[j, i][lhs] = prob
+                                    # update Pointer / Baum
+                                    B[j, i][lhs] = Tree(lhs, [B[j, k][rhs1], B[k, i][rhs2]])
                     # Hier: alle bis auf die n besten Konstituenten (n = self.beam) aus B und T entfernen
+                    P[j, i] = {k: v for k, v in sorted(P[j, i].items(), key=lambda item: item[1])}
+                    for key in list(P[j, i].keys())[self.beam:]:
+                        del P[j, i][key]
+                        del B[j, i][key]
+
         if "S" in P[0, i]:
             return (P[0, i]["S"], B[0, i]["S"])
         else:

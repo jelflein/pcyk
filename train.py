@@ -36,8 +36,8 @@ def train(args):
             left_part = rule.split(" -> ")[0]
             assert quantity_rules[rule] > 0
 
-            #prob = math.log(quantity_rules[rule] / left_quantity[left_part])
-            prob = quantity_rules[rule] / left_quantity[left_part]
+            prob = math.log(quantity_rules[rule] / left_quantity[left_part])
+            #prob = quantity_rules[rule] / left_quantity[left_part]
 
             fr.write(rule + "\t" + str(prob) + "\n")
 
@@ -48,8 +48,8 @@ def train(args):
 
             assert quantity_rules[lexicon_entry] > 0
 
-            #prob = math.log(quantity_rules[lexicon_entry] / left_quantity[left_part])
-            prob = quantity_rules[lexicon_entry] / left_quantity[left_part]
+            prob = math.log(quantity_rules[lexicon_entry] / left_quantity[left_part])
+            #prob = quantity_rules[lexicon_entry] / left_quantity[left_part]
 
             fl.write(lexicon_entry + "\t" + str(prob) + "\n")
 
@@ -85,27 +85,16 @@ def compute_rule(tree: Tree):
 
 
 def binarization():
-    futures = []
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        for rule in set(rules):
-            left, right = rule.split(" -> ")
-            right_terminals = right.split()
+    for rule in set(rules):
+        left, right = rule.split(" -> ")
+        right_terminals = right.split()
 
-            # NP -> DET NP ADJA XY DD ASD
-            if len(right_terminals) <= 2:
-                continue
-
-            futures.append(executor.submit(truncate, left, right_terminals, rule))
-
-    while len(futures) > 0:
-        future = futures.pop()
-
-        if not (future.done()):
-            futures.append(future)
-            print("con")
+        # NP -> DET NP ADJA XY DD ASD
+        if len(right_terminals) <= 2:
             continue
 
-        new_rules, rule = future.result()
+        # print(rule)
+        new_rules = truncate(left, right_terminals)
 
         for i in range(0, len(new_rules)):
             new_rule = new_rules[i]
@@ -122,10 +111,10 @@ def binarization():
 
 
 def get_terminal_name(first_part, second_part):
-    new_terminal = first_part + second_part
+    new_terminal = first_part + "+" + second_part
     used_terminals[new_terminal] += 1
 
-    new_terminal += str(used_terminals[new_terminal])
+    new_terminal += str(used_terminals[new_terminal]) + "'"
     left_quantity[new_terminal] += 1
 
     return new_terminal
@@ -135,7 +124,7 @@ def get_terminal_name(first_part, second_part):
 # S -> AB' CD'
 # AB' -> A B
 # CD' -> C D
-def truncate(left_part, rules, rule):
+def truncate(left_part, rules):
     agenda = [(left_part, rules, [])]
     new_rules = []
 
@@ -170,7 +159,7 @@ def truncate(left_part, rules, rule):
 
             #print(rule_fragment[0] + " -> " + rule_fragment[1] + " " + rule_fragment[2])
 
-    return new_rules, rule
+    return new_rules
 
 
 def compute_ovv():

@@ -1,6 +1,7 @@
 import re
 
 token_re = re.compile("(\(|\)|[^()\s]+)")
+binary_label = re.compile("(.+)\+(.+)'")
 
 
 class Tree:
@@ -41,6 +42,12 @@ class Tree:
     def is_terminal(self):
         return self.children == []
 
+    def is_binary(self):
+        return binary_label.fullmatch(self.label)
+
+    def non_terminals_without_binary(self):
+        return [node for node in TreeBinIterator(self) if node.is_nonterminal()]
+
 
 class TreeIterator:
     def __init__(self, tree):
@@ -55,6 +62,25 @@ class TreeIterator:
         current = self.agenda.pop()
         for child in reversed(current.children):
             self.agenda.append(child)
+        return current
+
+
+class TreeBinIterator:
+    def __init__(self, tree):
+        self.agenda = [tree]
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.agenda == []:
+            raise StopIteration
+        current = self.agenda.pop()
+        for child in reversed(current.children):
+            if child.is_binary:
+                self.agenda.extend(child.children)
+            else:
+                self.agenda.append(child)
         return current
 
 
