@@ -1,0 +1,3 @@
+(S (NP Salespeople) (VP (V sold) (NP (DET the) (N dog) (N biscuits))))
+(S (NP Salespeople) (VP (V sold) (NP (DET the) (N dog)) (NP biscuits)))
+(S (NP Salespeople) (VP (V sold) (NP (NP (DET the) (N dog)) (NP biscuits))))

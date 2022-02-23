@@ -21,12 +21,14 @@ def eval(args):
                 parsed = parser.parse(tokens)
                 if parsed:
                     parsed_tree = parsed[1]
+                    print(parsed_tree)
                     unbinary_tree(parsed_tree)
 
-                    lp = correct_constitue(parsed_tree, gold) / len(parsed_tree.nonterminals())
-                    lr = 0
+                    correct_constitues = correct_constitue(parsed_tree, gold)
+                    lp = correct_constitues / len(parsed_tree.nonterminals())
+                    lr = correct_constitues / len(gold.nonterminals())
 
-                    print(lp, lr, parsed[1], gold, sep='\t', flush=True)
+                    print(lp, lr, parsed_tree, gold, sep='\t', flush=True)
                     sum_lp += lp
                     sum_lr += lr
                     total += 1
@@ -83,13 +85,22 @@ def unbinary_tree(tree):
 
     while len(agenda) > 0:
         c_tree = agenda.pop()
+        # print(c_tree)
 
-        for child in list(c_tree.children):
-            if child.is_binary():
-                c_tree.children.remove(child)
+        new_children_agenda = []
+        new_children_agenda.extend(c_tree.children)
+        new_children = []
 
-                for a_child in child.children:
-                    c_tree.children.insert(0, a_child)
+        while len(new_children_agenda) > 0:
+            new_child = new_children_agenda.pop()
+
+            if new_child.is_binary():
+                new_children_agenda.extend(new_child.children)
+            else:
+                new_children.append(new_child)
+
+        new_children.reverse()
+        c_tree.children = new_children
 
         agenda.extend(c_tree.children)
 
@@ -98,7 +109,7 @@ if __name__ == '__main__':
     ap = ArgumentParser()
     ap.add_argument('--rules', type=str, default='rules.txt')
     ap.add_argument('--lexicon', type=str, default='lexicon.txt')
-    ap.add_argument('--beam', type=int, default=50)
+    ap.add_argument('--beam', type=int, default=100)
     ap.add_argument('--maxlen', type=int, default=25)
     ap.add_argument('trees')
     eval(ap.parse_args())

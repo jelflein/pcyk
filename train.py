@@ -8,7 +8,9 @@ from concurrent.futures import ThreadPoolExecutor
 from tree import parse_string, Tree
 
 quantity_rules = defaultdict(int)
+quantity_rules_total = defaultdict(int)
 left_quantity = defaultdict(int)
+right_quantity = defaultdict(int)
 words = defaultdict(int)
 
 rules = set()
@@ -37,16 +39,16 @@ def train(args):
             assert quantity_rules[rule] > 0
 
             prob = math.log(quantity_rules[rule] / left_quantity[left_part])
-            #prob = quantity_rules[rule] / left_quantity[left_part]
+            # prob = quantity_rules[rule] / left_quantity[left_part]
 
             fr.write(rule + "\t" + str(prob) + "\n")
 
     with open(args.lexicon, 'w') as fl:
         for lexicon_entry in lexicon:
             print(lexicon_entry)
-            left_part = lexicon_entry.split(" -> ")[0]
+            left_part, right_part = lexicon_entry.split(" -> ")
 
-            assert quantity_rules[lexicon_entry] > 0
+            assert left_quantity[left_part] > 0
 
             prob = math.log(quantity_rules[lexicon_entry] / left_quantity[left_part])
             #prob = quantity_rules[lexicon_entry] / left_quantity[left_part]
@@ -63,25 +65,28 @@ def compute_rule(tree: Tree):
     while len(agenda) != 0:
         cur_tree = agenda.pop()
 
-        is_lexicon_entry = False
-        rule = cur_tree.label + " ->"
-        left_quantity[cur_tree.label] += 1
-
-        for children_tree in cur_tree.children:
-            rule += " " + children_tree.label
-
-            if len(children_tree.children) > 0:
-                agenda.append(children_tree)
-            else:
-                is_lexicon_entry = True
-                words[children_tree.label] += 1
-
-        quantity_rules[rule] += 1
-
-        if is_lexicon_entry:
-            lexicon.add(rule)
+        if cur_tree.is_terminal():
+            words[cur_tree.label] += 1
         else:
-            rules.add(rule)
+            rule = cur_tree.label + " ->"
+
+            expand_to = ""
+            for children_tree in cur_tree.children:
+                expand_to += " " + children_tree.label
+
+            right_quantity[expand_to.strip()] += 1
+            rule += expand_to
+
+            quantity_rules[rule] += 1
+            quantity_rules_total[rule] += 1
+            left_quantity[cur_tree.label] += 1
+
+            if cur_tree.is_preterminal():
+                lexicon.add(rule)
+            else:
+                rules.add(rule)
+
+        agenda.extend(cur_tree.children)
 
 
 def binarization():
@@ -157,7 +162,7 @@ def truncate(left_part, rules):
             else:
                 new_rules.append(rule_fragment[0] + " -> " + rule_fragment[1] + " " + rule_fragment[2])
 
-            #print(rule_fragment[0] + " -> " + rule_fragment[1] + " " + rule_fragment[2])
+            # print(rule_fragment[0] + " -> " + rule_fragment[1] + " " + rule_fragment[2])
 
     return new_rules
 
@@ -186,7 +191,7 @@ if __name__ == '__main__':
     ap.add_argument('--lexicon', type=str, default='lexicon.txt')
     ap.add_argument('trees', type=str)
 
-    #truncate("S", ["A", "B", "C", "D", "E", "F", "G", "W"], "S - A B C")
+    # truncate("S", ["A", "B", "C", "D", "E", "F", "G", "W"], "S - A B C")
     train(ap.parse_args())
 
 '''

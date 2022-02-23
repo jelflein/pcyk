@@ -71,15 +71,19 @@ class PCYK():
                             for ruleprob, lhs in self.rules[rhs1][rhs2]:
                                 prob = ruleprob + P[j, k][rhs1] + P[k, i][rhs2]
                                 if lhs not in P[j, i] or prob > P[j, i][lhs]:
+                                    if len(P[j, i]) > self.beam:
+                                        min_key = max(P[j, i], key=P[j, i].get)
+
+                                        if prob < P[j, i][min_key]:
+                                            continue
+
+                                        del P[j, i][min_key]
+                                        del B[j, i][min_key]
+
                                     # update Wahrscheinlichkeit
                                     P[j, i][lhs] = prob
                                     # update Pointer / Baum
                                     B[j, i][lhs] = Tree(lhs, [B[j, k][rhs1], B[k, i][rhs2]])
-                    # Hier: alle bis auf die n besten Konstituenten (n = self.beam) aus B und T entfernen
-                    P[j, i] = {k: v for k, v in sorted(P[j, i].items(), key=lambda item: item[1])}
-                    for key in list(P[j, i].keys())[self.beam:]:
-                        del P[j, i][key]
-                        del B[j, i][key]
 
         if "S" in P[0, i]:
             return (P[0, i]["S"], B[0, i]["S"])
@@ -105,6 +109,6 @@ if __name__ == "__main__":
     ap.add_argument('--rules', type=str, default='rules.txt')
     ap.add_argument('--lexicon', type=str, default='lexicon.txt')
     ap.add_argument('--beam', type=int, default=50)
-    ap.add_argument('--maxlen', type=int, default=10)
+    ap.add_argument('--maxlen', type=int, default=25)
     ap.add_argument('file')
     main(ap.parse_args())
